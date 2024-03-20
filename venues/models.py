@@ -2,6 +2,8 @@ from django.db import models
 
 # Create your models here.
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from datetime import timedelta
 
 class Venue(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -23,6 +25,28 @@ class Booking(models.Model):
     address = models.TextField()
     postcode = models.CharField(max_length=10)
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE)
+    date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    number_of_people = models.IntegerField()
+
+    def save(self, *args, **kwargs):
+        if not self.check_availability():
+            raise ValidationError("The venue is not available for the selected date and time.")
+        super(Booking, self).save(*args, **kwargs)
+
+    def check_availability(self):
+        # Check if there is any booking that overlaps with the desired time slot for the same venue
+        overlapping_bookings = Booking.objects.filter(
+            venue=self.venue,
+            date=self.date
+        ).exclude(
+            id=self.id  # exclude the current booking from the check in case of update
+        ).filter(
+            models.Q(end_time__gt=self.start_time) & models.Q(start_time__lt=self.end_time)
+        )
+        return not overlapping_bookings.exists()
+
 
 class Review(models.Model):
     venue = models.ForeignKey(Venue, related_name='reviews', on_delete=models.CASCADE)

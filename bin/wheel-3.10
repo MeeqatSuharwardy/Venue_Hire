@@ -1,4 +1,4 @@
-#!/Users/meeqatsuharwardy/VenueHire/backend/bin/python
+#!/Users/meeqatsuharwardy/VenueHire/venue_backend/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys
